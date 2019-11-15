@@ -1,42 +1,44 @@
-/**
- * This is the main entrypoint to your Probot app
- * @param {import('probot').Application} app
- */
 module.exports = app => {
   app.log("We're live");
 
   app.on('pull_request.closed', async (context) => {
     const { merged, base, merge_commit_sha, number } = context.payload.pull_request;
+    console.log(context.payload.sender.login);
     if (merged && base.ref === 'master') {
       console.log(`Creating a backport PR for develop\nSHA: ${merge_commit_sha}`);
       const github = await app.auth();
-      const resp = await github.apps.createInstallationToken({ installation_id: context.payload.installation.id });
+      const resp = await github.apps.createInstallationToken({
+        installation_id: context.payload.installation.id
+      });
       if (resp.status === 201) {
+        const head = `develop-port-${number}`;
         setupRepo(resp.data.token);
-        cherryPick(merge_commit_sha);
-        const { owner, repo } = context.repo();
+        cherryPick(head, merge_commit_sha);
         try {
+          const { owner, repo } = context.repo();
           const newPr = await context.github.pulls.create({
             owner,
             repo,
-            title: `Port ${number} to develop`,
-            head: `develop-port-${number}`,
+            title: `Port #${number} to develop`,
+            head,
             base: 'develop',
             body: `Port changes made in #${number} to the develop branch`,
           });
+
+          const { sender } = context.payload;
           context.github.issues.createComment({
             issue_number: number,
             owner,
             repo,
-            body: `Went ahead and made a merge PR [here](${newPr.data.html_url}) for ya 👍.`
+            body: `Thanks @${sender.login} 👍, I was able to make a merge PR [here](${newPr.data.html_url}).`
           });
-          context.github.pulls.revi
         } catch (err) {
+          app.log(err);
           context.github.issues.createComment({
             issue_number: number,
             owner,
             repo,
-            body: "Had trouble making a merge PR 😓, looks like you'll have to resolve some conflicts."
+            body: 'Had trouble making a merge PR 😓.'
           });
         }
       }
@@ -53,12 +55,12 @@ function setupRepo(token) {
   exec(`git fetch upstream develop`);
 }
 
-function cherryPick(merge_commit_sha) {
-  const { exec, cd, rm } = require('shelljs');  
+function cherryPick(head, merge_commit_sha) {
+  const { exec, cd, rm } = require('shelljs'); 
   exec('git checkout upstream/develop');
-  exec(`git checkout -b ${branch}`);
+  exec(`git checkout -b ${head}`);
   exec(`git cherry-pick ${merge_commit_sha}`);
-  exec(`git push upstream ${branch}`);
+  exec(`git push upstream ${head}`);
   cd('..');
   rm('-rf', 'salesforcedx-templates');
 }
