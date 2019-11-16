@@ -1,11 +1,12 @@
+/**
+ * @param {import('probot').Application} app
+ */
 module.exports = app => {
   app.log("We're live");
 
   app.on('pull_request.closed', async (context) => {
     const { merged, base, merge_commit_sha, number } = context.payload.pull_request;
-    console.log(context.payload.sender.login);
     if (merged && base.ref === 'master') {
-      console.log(`Creating a backport PR for develop\nSHA: ${merge_commit_sha}`);
       const github = await app.auth();
       const resp = await github.apps.createInstallationToken({
         installation_id: context.payload.installation.id
@@ -33,7 +34,7 @@ module.exports = app => {
             body: `Thanks @${sender.login} 👍, I was able to make a merge PR [here](${newPr.data.html_url}).`
           });
         } catch (err) {
-          app.log(err);
+          app.log(err.stack);
           context.github.issues.createComment({
             issue_number: number,
             owner,
