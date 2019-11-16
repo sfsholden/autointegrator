@@ -2,7 +2,8 @@ const { format } = require('util');
 
 const messages = {
   CloneUrl: 'https://sfdx-backport:%s@github.com/%s/%s',
-  CommentPortRequest: 'Thanks @%s 👍, a port PR for %s was created [here](%s).',
+  CommentPortRequest:
+    'Thanks @%s 👍, a port PR for the `%s` branch was created [here](%s).',
   CommentPortRequestFailed: 'Had some trouble making a port PR for %s 😓.',
   CommentCherryPickFailed:
     'Heads up @%s, merge conflicts prevented a successful cherry pick. You can ' +

@@ -60,6 +60,10 @@ module.exports = app => {
     }
   });
 
+  /**
+   * Redact repo information and branches from the get go
+   * @param {object} context
+   */
   const initRedactor = context => {
     redactor = new Redactor();
     redactor.add(...Object.values(context.repo()), TRIGGER, BASE);
