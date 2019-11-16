@@ -14,17 +14,23 @@
     "probot-app"
   ],
   "scripts": {
-    "dev": "nodemon",
-    "start": "probot run ./index.js",
+    "dev": "nodemon --ignore tmp/",
+    "start": "probot run ./src/index.js",
     "lint": "standard --fix",
     "test": "jest && standard",
-    "test:watch": "jest --watch --notify --notifyMode=change --coverage"
+    "test:watch": "jest --watch --notify --notifyMode=change --coverage",
+    "simulate": "probot receive -e pull_request -p test/fixtures/pulls.closed.json ./src/index.js"
   },
   "dependencies": {
-    "probot": "^9.5.3",
-    "shelljs": "^0.8.3"
+    "probot": "^9.5.3"
   },
   "devDependencies": {
+    "eslint": "^6.6.0",
+    "eslint-config-standard": "^14.1.0",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-node": "^10.0.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.1",
     "jest": "^24.9.0",
     "nock": "^11.4.0",
     "nodemon": "^1.19.4",
