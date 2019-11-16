@@ -10,6 +10,7 @@ const TMP_LOCATION = './tmp';
  * @param {import('probot').Application} app
  */
 module.exports = app => {
+  // TODO: don't use a global redactor
   let redactor;
 
   app.log("We're live");
@@ -61,7 +62,7 @@ module.exports = app => {
 
   const initRedactor = context => {
     redactor = new Redactor();
-    redactor.add(...Object.values(context.repo()));
+    redactor.add(...Object.values(context.repo()), TRIGGER, BASE);
   };
 
   const fetchToken = async context => {
