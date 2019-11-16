@@ -17,7 +17,7 @@ module.exports = {
   get: (key, params) => {
     if (messages[key]) {
       if (params) {
-        return format(messages[key], params);
+        return format(messages[key], ...params);
       }
       return format(messages[key]);
     }
