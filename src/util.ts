@@ -13,7 +13,6 @@ export class Logger {
     this.secrets = new Set();
   }
 
-  public something() {}
   public info(message: string) {
     this.doLog(message, this.rootLogTarget);
   }
