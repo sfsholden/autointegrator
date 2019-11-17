@@ -1,15 +1,23 @@
-const { join } = require('path');
-const { existsSync } = require('fs');
-const { run } = require('./util');
-const messages = require('./messages');
-const { BASE, TMP_LOCATION } = require('./constants');
+import { join } from 'path';
+import { existsSync } from 'fs';
+import { run } from './util';
+import { getMessage } from './messages';
+import { BASE, TMP_LOCATION } from './constants';
+import { Application, Context } from 'probot';
 
-class BranchPort {
-  constructor(context) {
+type CommentOptions = {
+  number: number;
+  body: string;
+};
+
+export default class BranchPort {
+  private context: Context;
+
+  constructor(context: Context) {
     this.context = context;
   }
 
-  async fetchToken(app) {
+  public async fetchToken(app: Application): Promise<string> {
     const github = await app.auth();
     const resp = await github.apps.createInstallationToken({
       installation_id: this.context.payload.installation.id
@@ -20,9 +28,9 @@ class BranchPort {
     throw new Error('Error fetching access token');
   }
 
-  async setupRepo(accessToken) {
+  public async setupRepo(accessToken: string) {
     const { owner, repo } = this.context.repo();
-    const url = messages.get('CloneUrl', [accessToken, owner, repo]);
+    const url = getMessage('CloneUrl', [accessToken, owner, repo]);
     const repoPath = join(TMP_LOCATION, `${owner}-${repo}`);
     run(`git clone ${url} ${repoPath}`);
     process.chdir(repoPath);
@@ -30,7 +38,7 @@ class BranchPort {
     run(`git fetch upstream ${BASE}`);
   }
 
-  createPortBranch() {
+  public createPortBranch() {
     const { number, merge_commit_sha } = this.context.payload.pull_request;
     const head = `${BASE}-port-${number}`;
     try {
@@ -50,21 +58,21 @@ class BranchPort {
     return head;
   }
 
-  async createPortRequest(head) {
+  async createPortRequest(head: string): Promise<string> {
     const { owner, repo } = this.context.repo();
     const { number } = this.context.payload.pull_request;
     const pr = await this.context.github.pulls.create({
       owner,
       repo,
-      title: messages.get('PortRequestTitle', [number, BASE]),
+      title: getMessage('PortRequestTitle', [number, BASE]),
       head,
       base: BASE,
-      body: messages.get('PortRequestBody', [number, BASE])
+      body: getMessage('PortRequestBody', [number, BASE])
     });
-    return pr;
+    return pr.data.html_url;
   }
 
-  async commentOnPr(options) {
+  public async commentOnPr(options: CommentOptions) {
     const { owner, repo } = this.context.repo();
     await this.context.github.issues.createComment({
       owner,
@@ -74,7 +82,7 @@ class BranchPort {
     });
   }
 
-  cleanUp() {
+  public cleanUp() {
     const { owner, repo } = this.context.repo();
     process.chdir(join(__dirname, '..'));
     const repoPath = join(TMP_LOCATION, `${owner}-${repo}`);
@@ -83,5 +91,3 @@ class BranchPort {
     }
   }
 }
-
-module.exports = BranchPort;

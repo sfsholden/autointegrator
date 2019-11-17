@@ -1,6 +1,6 @@
-const { format } = require('util');
+import { format } from 'util';
 
-const messages = {
+const messages: { [key: string]: string } = {
   CloneUrl: 'https://sfdx-backport:%s@github.com/%s/%s',
   CommentPortRequest:
     'Thanks @%s 👍, a port PR for the `%s` branch was created [here](%s).',
@@ -14,14 +14,12 @@ const messages = {
   PortRequestTitle: 'Port #%s to %s branch'
 };
 
-module.exports = {
-  get: (key, params) => {
-    if (messages[key]) {
-      if (params) {
-        return format(messages[key], ...params);
-      }
-      return format(messages[key]);
+export const getMessage = (key: string, params?: string[]) => {
+  if (messages[key]) {
+    if (params) {
+      return format(messages[key], ...params);
     }
-    throw new Error(`Missing message for key ${key}`);
+    return format(messages[key]);
   }
+  throw new Error(`Missing message for key ${key}`);
 };

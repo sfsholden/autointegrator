@@ -14,10 +14,10 @@
     "probot-app"
   ],
   "scripts": {
-    "dev": "nodemon --ignore tmp/",
-    "start": "probot run ./src/index.js",
-    "lint": "standard --fix",
-    "test": "jest && standard",
+    "dev": "nodemon --exec \"npm start\"",
+    "start": "ts-node ./src/index.ts",
+    "lint": "eslint **/*.ts",
+    "test": "jest && npm run lint",
     "test:watch": "jest --watch --notify --notifyMode=change --coverage",
     "simulate": "probot receive -e pull_request -p test/fixtures/pulls.closed.json ./src/index.js"
   },
@@ -25,34 +25,44 @@
     "probot": "^9.5.3"
   },
   "devDependencies": {
+    "@types/jest": "^24.0.23",
+    "@types/sinon": "^7.5.0",
+    "@typescript-eslint/eslint-plugin": "^2.7.0",
+    "@typescript-eslint/parser": "^2.7.0",
     "eslint": "^6.6.0",
     "eslint-config-standard": "^14.1.0",
     "eslint-plugin-import": "^2.18.2",
     "eslint-plugin-node": "^10.0.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.1",
+    "eslint-plugin-typescript": "^0.14.0",
     "jest": "^24.9.0",
     "nock": "^11.4.0",
     "nodemon": "^1.19.4",
+    "sinon": "^7.5.0",
     "smee-client": "^1.1.0",
-    "standard": "^14.3.1"
+    "standard": "^14.3.1",
+    "ts-jest": "^24.1.0",
+    "ts-node": "^8.5.2",
+    "typescript": "^3.6.4"
   },
   "engines": {
     "node": ">= 8.3.0"
   },
   "standard": {
+    "parser": "@typescript-eslint/parser",
     "env": [
       "jest"
+    ],
+    "plugins": [
+      "typescript"
     ]
   },
   "nodemonConfig": {
-    "exec": "npm start",
     "watch": [
-      ".env",
-      "."
-    ]
-  },
-  "jest": {
-    "testEnvironment": "node"
+      "src/**/*.ts"
+    ],
+    "ext": "ts",
+    "exec": "npm start"
   }
 }

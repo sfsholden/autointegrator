@@ -1,19 +1,20 @@
-const messages = require('./messages');
-const BranchPort = require('./branchPort');
-const { BASE, TRIGGER } = require('./constants');
-const { Logger } = require('./util');
+import { Probot } from 'probot';
+import { getMessage } from './messages';
+import BranchPort from './branchPort';
+import { BASE, TRIGGER } from './constants';
+import { Logger } from './util';
 
 /**
  * @param {import('probot').Application} app
  */
-module.exports = app => {
-  app.log("We're live");
+Probot.run(app => {
+  console.log('---------------\nAutointegrator\n---------------');
 
   app.on('pull_request.closed', async context => {
     const port = new BranchPort(context);
     const logger = new Logger(app, context);
     // mark branches and repo info as sensitive
-    logger.addSecret(...Object.values(context.repo()), BASE, TRIGGER);
+    logger.addSecret(...Object.values<string>(context.repo()), BASE, TRIGGER);
 
     const { login: sender } = context.payload.sender;
     const { pull_request: closedPr } = context.payload;
@@ -30,27 +31,23 @@ module.exports = app => {
         const portBranchName = port.createPortBranch();
 
         logger.info('Sending the port pull request');
-        const portPr = await port.createPortRequest(portBranchName);
+        const portPrLink = await port.createPortRequest(portBranchName);
         port.commentOnPr({
           number,
-          body: messages.get('CommentPortRequest', [
-            sender,
-            BASE,
-            portPr.data.html_url
-          ])
+          body: getMessage('CommentPortRequest', [sender, BASE, portPrLink])
         });
       } catch (e) {
         let body;
         if (e.name === 'ConflictException') {
-          body = messages.get('CommentCherryPickFailed', [
+          body = getMessage('CommentCherryPickFailed', [
             sender,
             e.portBranchName,
             closedPr.merge_commit_sha
           ]);
-          logger.warn(messages.get('LogCherryPickFailed'));
+          logger.warn(getMessage('LogCherryPickFailed'));
         } else {
           logger.error(e.stack);
-          body = messages.get('CommentPortRequestFailed', [BASE]);
+          body = getMessage('CommentPortRequestFailed', [BASE]);
         }
         port.commentOnPr({ number, body });
       } finally {
@@ -59,4 +56,4 @@ module.exports = app => {
       }
     }
   });
-};
+});
