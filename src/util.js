@@ -2,21 +2,21 @@ const { execSync } = require('child_process');
 
 class Logger {
   constructor(app, context) {
-    this.app = app;
+    this.log = app.log;
     this.installationId = context.payload.installation.id;
     this.secrets = new Set();
   }
 
   info(message) {
-    this.app.log(`[${this.installationId}] ${this._redact(message)}`);
+    this.log(`[${this.installationId}] ${this._redact(message)}`);
   }
 
   warn(message) {
-    this.app.log.warn(`[${this.installationId}] ${this._redact(message)}`);
+    this.log.warn(`[${this.installationId}] ${this._redact(message)}`);
   }
 
   error(message) {
-    this.app.log.error(`[${this.installationId}] ${this._redact(message)}`);
+    this.log.error(`[${this.installationId}] ${this._redact(message)}`);
   }
 
   /**
