@@ -1,35 +1,44 @@
 const { execSync } = require('child_process');
 
-module.exports = {
+class Logger {
+  constructor(app, context) {
+    this.app = app;
+    this.installationId = context.payload.installation.id;
+    this.secrets = new Set();
+  }
+
+  info(message) {
+    this.app.log(`[${this.installationId}] ${this._redact(message)}`);
+  }
+
+  warn(message) {
+    this.app.log.warn(`[${this.installationId}] ${this._redact(message)}`);
+  }
+
+  error(message) {
+    this.app.log.error(`[${this.installationId}] ${this._redact(message)}`);
+  }
+
   /**
-   * Redact sensitive tokens from messages. Used primarily for logging.
-   * @example
-   * const redactor = new Redactor();
-   * redactor.add('1234', 'sensitive');
-   * redactor.format('a sensitive token 1234') => 'a * token *'
+   * Mark tokens as sensitive to redact from logging messages
+   * @param  {...strings} tokens sensitive tokens
    */
-  Redactor: class Redactor {
-    constructor() {
-      this.tokens = new Set();
-    }
+  addSecret(...tokens) {
+    tokens.map(t => this.secrets.add(t));
+  }
 
-    add(...tokens) {
-      tokens.map(t => this.tokens.add(t));
-    }
+  _redact(message) {
+    const pattern = Array.from(this.secrets).reduce((acc, t, i) => {
+      acc += t;
+      acc += i < this.secrets.size - 1 ? '|' : ')';
+      return acc;
+    }, '(');
+    return message.replace(new RegExp(pattern, 'g'), '*');
+  }
+}
 
-    /**
-     * Redact the tokens set by `add` from the given message
-     * @param {string} message
-     */
-    format(message) {
-      const pattern = Array.from(this.tokens).reduce((acc, t, i) => {
-        acc += t;
-        acc += i < this.tokens.size - 1 ? '|' : ')';
-        return acc;
-      }, '(');
-      return message.replace(new RegExp(pattern, 'g'), '*');
-    }
-  },
+module.exports = {
+  Logger,
   run: command => {
     try {
       return execSync(command, { stdio: 'pipe' });

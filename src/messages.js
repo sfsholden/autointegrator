@@ -7,7 +7,7 @@ const messages = {
   CommentPortRequestFailed: 'Had some trouble making a port PR for %s 😓.',
   CommentCherryPickFailed:
     'Heads up @%s, merge conflicts prevented a successful cherry pick. You can ' +
-    'give it a shot yourself and resolve the conflicts with the following steps:\n' +
+    'try it out yourself and manually resolve the conflicts with the following steps:\n' +
     '```\ngit pull %s\ngit cherry-pick %s```',
   LogCherryPickFailed: 'Cherry pick failed due to merge conflicts',
   PortRequestBody: 'Port changes made in #%s to the %s branch',
