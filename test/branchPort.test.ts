@@ -1,9 +1,9 @@
+import { Context } from 'probot';
 import { createSandbox, SinonStub } from 'sinon';
+import { join } from 'path';
 import * as util from '../src/util';
 import BranchPort from '../src/branchPort';
-import { Context } from 'probot';
 import { BASE, TMP_LOCATION } from '../src/constants';
-import { join } from 'path';
 import { getMessage } from '../src/messages';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */

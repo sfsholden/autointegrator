@@ -1,13 +1,10 @@
-import { Probot } from 'probot';
+import { Application, Probot } from 'probot';
 import { getMessage } from './messages';
 import BranchPort from './branchPort';
 import { BASE, TRIGGER } from './constants';
 import { Logger } from './util';
 
-/**
- * @param {import('probot').Application} app
- */
-Probot.run(app => {
+Probot.run((app: Application) => {
   console.log('---------------\nAutointegrator\n---------------');
 
   app.on('pull_request.closed', async context => {

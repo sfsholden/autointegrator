@@ -1,6 +1,6 @@
-import { execSync } from 'child_process';
 import { Application, Context } from 'probot';
 import { LoggerWithTarget } from 'probot/lib/wrap-logger';
+import { execSync } from 'child_process';
 
 export class Logger {
   private rootLogTarget: LoggerWithTarget;

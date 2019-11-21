@@ -1,9 +1,10 @@
+import { WebhookPayloadPullRequest } from '@octokit/webhooks';
+import { Application, Context } from 'probot';
 import { join } from 'path';
 import { existsSync } from 'fs';
 import { run } from './util';
 import { getMessage } from './messages';
 import { BASE, TMP_LOCATION } from './constants';
-import { Application, Context } from 'probot';
 
 type CommentOptions = {
   number: number;
@@ -11,15 +12,16 @@ type CommentOptions = {
 };
 
 export default class BranchPort {
-  private context: Context;
+  private context: Context<WebhookPayloadPullRequest>;
 
-  constructor(context: Context) {
+  constructor(context: Context<WebhookPayloadPullRequest>) {
     this.context = context;
   }
 
   public async fetchToken(app: Application): Promise<string> {
     const github = await app.auth();
     const resp = await github.apps.createInstallationToken({
+      // @ts-ignore this value does exist, just not typed for whatever reason
       installation_id: this.context.payload.installation.id
     });
     if (resp.status === 201) {
@@ -60,7 +62,7 @@ export default class BranchPort {
 
   async createPortRequest(head: string): Promise<string> {
     const { owner, repo } = this.context.repo();
-    const { number } = this.context.payload.pull_request;
+    const number = String(this.context.payload.pull_request.number);
     const pr = await this.context.github.pulls.create({
       owner,
       repo,
