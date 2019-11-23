@@ -1,5 +1,7 @@
 # sfdx-backporter
 
+<a href="https://github.com/brpowell/sfdx-backporter"><img alt="GitHub Actions status" src="https://github.com/brpowell/sfdx-backporter/workflows/Testing/badge.svg?branch=master"></a>
+
 > A GitHub App built with [Probot](https://github.com/probot/probot) that Automatically backport merge commits
 
 ## Setup
