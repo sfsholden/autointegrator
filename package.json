@@ -46,7 +46,7 @@
     "typescript": "^3.6.4"
   },
   "engines": {
-    "node": ">= 8.3.0"
+    "node": "13.x"
   },
   "standard": {
     "parser": "@typescript-eslint/parser",
@@ -63,5 +63,24 @@
     ],
     "ext": "ts",
     "exec": "npm start"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "roots": [
+      "<rootDir>/src/",
+      "<rootDir>/test/"
+    ],
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
+    "testRegex": "(/__tests__/.*|\\.(test|spec))\\.[tj]sx?$",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "json",
+      "node"
+    ]
   }
 }

@@ -6,7 +6,7 @@ import { run } from './util';
 import { getMessage } from './messages';
 import { BASE, TMP_LOCATION } from './constants';
 
-type CommentOptions = {
+export type CommentOptions = {
   number: number;
   body: string;
 };
@@ -60,7 +60,7 @@ export default class BranchPort {
     return head;
   }
 
-  async createPortRequest(head: string): Promise<string> {
+  public async createPortRequest(head: string): Promise<string> {
     const { owner, repo } = this.context.repo();
     const number = String(this.context.payload.pull_request.number);
     const pr = await this.context.github.pulls.create({
@@ -74,9 +74,9 @@ export default class BranchPort {
     return pr.data.html_url;
   }
 
-  public async commentOnPr(options: CommentOptions) {
+  public commentOnPr(options: CommentOptions) {
     const { owner, repo } = this.context.repo();
-    await this.context.github.issues.createComment({
+    this.context.github.issues.createComment({
       owner,
       repo,
       issue_number: options.number,
