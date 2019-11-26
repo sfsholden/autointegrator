@@ -8,8 +8,23 @@ export class ContextBuilder {
     this.context = {};
   }
 
-  public withRepo() {
-    this.context.repo = () => ({ owner: 'testOwner', repo: 'testRepo' });
+  public withGithub(github: any) {
+    this.context.github = github;
+    return this;
+  }
+
+  public withLabels(issue: number, labels: string[]) {
+    const data = labels.map(label => ({ name: label }));
+    this.withGithub({
+      issues: {
+        listLabelsOnIssue: jest.fn().mockImplementation(options => {
+          if (options.issue_number === issue) {
+            return { data };
+          }
+          return {};
+        })
+      }
+    });
     return this;
   }
 
@@ -18,8 +33,8 @@ export class ContextBuilder {
     return this;
   }
 
-  public withGithub(github: any) {
-    this.context.github = github;
+  public withRepo() {
+    this.context.repo = () => ({ owner: 'testOwner', repo: 'testRepo' });
     return this;
   }
 

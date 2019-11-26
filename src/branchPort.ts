@@ -4,7 +4,7 @@ import { join } from 'path';
 import { existsSync } from 'fs';
 import { run } from './util';
 import { getMessage } from './messages';
-import { BASE, TMP_LOCATION } from './constants';
+import { TMP_LOCATION } from './constants';
 
 export type CommentOptions = {
   number: number;
@@ -13,6 +13,7 @@ export type CommentOptions = {
 
 export default class BranchPort {
   private context: Context<WebhookPayloadPullRequest>;
+  private targetBranches?: string[];
 
   constructor(context: Context<WebhookPayloadPullRequest>) {
     this.context = context;
@@ -30,21 +31,29 @@ export default class BranchPort {
     throw new Error('Error fetching access token');
   }
 
-  public async setupRepo(accessToken: string) {
+  public async setupRepo(targets: string[], accessToken: string) {
     const { owner, repo } = this.context.repo();
     const url = getMessage('CloneUrl', [accessToken, owner, repo]);
     const repoPath = join(TMP_LOCATION, `${owner}-${repo}`);
-    run(`git clone ${url} ${repoPath}`);
-    process.chdir(repoPath);
-    run(`git remote add upstream ${url}`);
-    run(`git fetch upstream ${BASE}`);
+    try {
+      run(`git clone ${url} ${repoPath}`);
+      process.chdir(repoPath);
+      run(`git remote add upstream ${url}`);
+      run(`git fetch upstream ${targets[0]}`);
+    } catch (e) {
+      if (e.message.includes("Couldn't find remote ref")) {
+        e.name = 'MissingTargetException';
+        e.targetBranchName = targets[0];
+      }
+      throw e;
+    }
   }
 
-  public createPortBranch() {
+  public createPortBranch(targets: string[]): string {
     const { number, merge_commit_sha } = this.context.payload.pull_request;
-    const head = `${BASE}-port-${number}`;
+    const head = `${targets[0]}-port-${number}`;
     try {
-      run(`git checkout upstream/${BASE}`);
+      run(`git checkout upstream/${targets[0]}`);
       run(`git checkout -b ${head}`);
       run(`git cherry-pick ${merge_commit_sha}`);
       run(`git push upstream ${head}`);
@@ -60,16 +69,19 @@ export default class BranchPort {
     return head;
   }
 
-  public async createPortRequest(head: string): Promise<string> {
+  public async createPortRequest(
+    targets: string[],
+    head: string
+  ): Promise<string> {
     const { owner, repo } = this.context.repo();
     const number = String(this.context.payload.pull_request.number);
     const pr = await this.context.github.pulls.create({
       owner,
       repo,
-      title: getMessage('PortRequestTitle', [number, BASE]),
+      title: getMessage('PortRequestTitle', [number, targets[0]]),
       head,
-      base: BASE,
-      body: getMessage('PortRequestBody', [number, BASE])
+      base: targets[0],
+      body: getMessage('PortRequestBody', [number, targets[0]])
     });
     return pr.data.html_url;
   }
@@ -91,5 +103,26 @@ export default class BranchPort {
     if (existsSync(repoPath)) {
       run(`rm -rf ${repoPath}`);
     }
+  }
+
+  public async getTargetBranches() {
+    if (!this.targetBranches) {
+      this.targetBranches = [];
+      const { owner, repo } = this.context.repo();
+      const labels = await this.context.github.issues.listLabelsOnIssue({
+        owner,
+        repo,
+        issue_number: this.context.payload.pull_request.number
+      });
+
+      for (const label of labels.data) {
+        const parts = label.name.split('port:');
+        if (parts.length === 2 && parts[1]) {
+          this.targetBranches.push(parts[1]);
+        }
+      }
+    }
+
+    return this.targetBranches;
   }
 }
