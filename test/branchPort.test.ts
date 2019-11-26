@@ -1,32 +1,27 @@
-import { Context } from 'probot';
 import { join } from 'path';
 import * as fs from 'fs';
 import * as util from '../src/util';
 import BranchPort from '../src/branchPort';
 import { BASE, TMP_LOCATION } from '../src/constants';
 import { getMessage } from '../src/messages';
+import { ContextBuilder } from './testUtil';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 jest.mock('fs');
 const mockedFs = fs as jest.Mocked<typeof fs>;
 
-// TODO: get rid of the @ts-ignore litter
-
 describe('BranchPort', () => {
   let run: jest.SpyInstance;
 
   beforeAll(() => (run = jest.spyOn(util, 'run').mockImplementation(() => '')));
   afterAll(() => jest.restoreAllMocks());
-  afterEach(() => jest.resetAllMocks());
+  afterEach(() => jest.clearAllMocks());
 
   describe('setupRepo', () => {
-    const port = new BranchPort({
-      // @ts-ignore
-      repo: () => ({ owner: 'testOwner', repo: 'testRepo' })
-    });
+    const port = new BranchPort(new ContextBuilder().withRepo().build());
 
-    test('Should run correct commands in order', async () => {
+    test('should run correct commands in order', async () => {
       const chdir = jest
         .spyOn(process, 'chdir')
         .mockImplementationOnce(() => true);
@@ -45,11 +40,10 @@ describe('BranchPort', () => {
   });
 
   describe('createPortBranch', () => {
-    const port = new BranchPort({
-      payload: {
-        pull_request: { number: 123, merge_commit_sha: 'testsha' }
-      }
-    } as Context);
+    const builder = new ContextBuilder().withPayload({
+      pull_request: { number: 123, merge_commit_sha: 'testsha' }
+    });
+    const port = new BranchPort(builder.build());
     const expectedBranch = `${BASE}-port-123`;
 
     test('should return expected name for port branch', () => {
@@ -85,29 +79,18 @@ describe('BranchPort', () => {
   });
 
   describe('createPortRequest', () => {
-    let context: Context;
-    let port: BranchPort;
-
-    beforeEach(() => {
-      context = {
-        // @ts-ignore
-        repo: () => ({ owner: 'testOwner', repo: 'testRepo' }),
-        payload: {
-          pull_request: { number: 123 }
-        },
-        github: {
-          pulls: {
-            // @ts-ignore
-            create: jest.fn().mockResolvedValue({
-              data: {
-                html_url: 'https://example.com'
-              }
-            })
-          }
+    const context = new ContextBuilder()
+      .withRepo()
+      .withPayload({ pull_request: { number: 123 } })
+      .withGithub({
+        pulls: {
+          create: jest
+            .fn()
+            .mockResolvedValue({ data: { html_url: 'https://example.com' } })
         }
-      };
-      port = new BranchPort(context);
-    });
+      })
+      .build();
+    const port = new BranchPort(context);
 
     test('should create pull request with correct parameters', async () => {
       await port.createPortRequest('testBranch');
@@ -129,15 +112,12 @@ describe('BranchPort', () => {
   });
 
   describe('commentOnPr', () => {
-    const context = {
-      repo: () => ({ owner: 'testOwner', repo: 'testRepo' }),
-      github: {
-        issues: {
-          createComment: jest.fn()
-        }
-      }
-    };
-    // @ts-ignore
+    const context = new ContextBuilder()
+      .withRepo()
+      .withGithub({
+        issues: { createComment: jest.fn() }
+      })
+      .build();
     const port = new BranchPort(context);
 
     test('should comment on given issue number with correct parameters', () => {
@@ -153,10 +133,7 @@ describe('BranchPort', () => {
 
   describe('cleanUp', () => {
     const repoPath = join(TMP_LOCATION, `testOwner-testRepo`);
-    const port = new BranchPort({
-      // @ts-ignore
-      repo: () => ({ owner: 'testOwner', repo: 'testRepo' })
-    });
+    const port = new BranchPort(new ContextBuilder().withRepo().build());
 
     test('Should delete repo if folder exists', () => {
       mockedFs.existsSync.mockImplementation(path => path === repoPath);
