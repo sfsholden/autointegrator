@@ -23,7 +23,8 @@
   },
   "dependencies": {
     "probot": "^9.5.3",
-    "ts-node": "^8.5.2"
+    "ts-node": "^8.5.2",
+    "typescript": "^3.6.4"
   },
   "devDependencies": {
     "@types/jest": "^24.0.23",
@@ -42,8 +43,7 @@
     "sinon": "^7.5.0",
     "smee-client": "^1.1.0",
     "standard": "^14.3.1",
-    "ts-jest": "^24.1.0",
-    "typescript": "^3.6.4"
+    "ts-jest": "^24.1.0"
   },
   "engines": {
     "node": "13.x"
