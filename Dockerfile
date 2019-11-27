@@ -5,5 +5,4 @@ ADD "package.json" .
 ADD "package-lock.json" .
 RUN npm install
 ADD . .
-EXPOSE 80
 CMD npm start
