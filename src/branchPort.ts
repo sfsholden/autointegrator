@@ -4,7 +4,8 @@ import { join } from 'path';
 import { existsSync } from 'fs';
 import { run } from './util';
 import { getMessage } from './messages';
-import { TMP_LOCATION } from './constants';
+
+export const TMP_LOCATION = './tmp';
 
 export type CommentOptions = {
   number: number;

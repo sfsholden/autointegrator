@@ -1,8 +1,7 @@
 import { join } from 'path';
 import * as fs from 'fs';
 import * as util from '../src/util';
-import BranchPort from '../src/branchPort';
-import { TMP_LOCATION } from '../src/constants';
+import BranchPort, { TMP_LOCATION } from '../src/branchPort';
 import { getMessage } from '../src/messages';
 import { ContextBuilder } from './testUtil';
 

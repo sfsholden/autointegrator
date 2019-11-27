@@ -1,23 +1,24 @@
 import { Application, Probot } from 'probot';
 import { getMessage } from './messages';
 import BranchPort from './branchPort';
-import { TRIGGER } from './constants';
-import { Logger } from './util';
+import { Logger, Config } from './util';
 
 Probot.run((app: Application) => {
   console.log('---------------\nAutointegrator\n---------------');
 
   app.on('pull_request.opened', async context => {
+    const config = await Config.get(context);
     const { pull_request: openedPr } = context.payload;
-    // TODO: Support defining trigger for auto-labeling in config
-    if (!context.isBot && openedPr.base.ref === TRIGGER) {
+    const targetBranches = config.triggers[openedPr.base.ref] || [];
+
+    if (!context.isBot && targetBranches.length > 0) {
       const { number: issue_number } = context.payload;
       const { owner, repo } = context.repo();
       context.github.issues.addLabels({
         owner,
         repo,
         issue_number,
-        labels: ['port:develop']
+        labels: [`port:${targetBranches[0]}`]
       });
     }
   });
@@ -25,7 +26,11 @@ Probot.run((app: Application) => {
   app.on('pull_request.closed', async context => {
     const port = new BranchPort(context);
     const logger = new Logger(app, context);
-    logger.addSecret(...Object.values<string>(context.repo()), TRIGGER);
+    const config = await Config.get(context);
+    logger.addSecret(
+      ...Object.values<string>(context.repo()),
+      ...Object.keys(config.triggers)
+    );
 
     const { login: sender } = context.payload.sender;
     const { pull_request: closedPr } = context.payload;
@@ -73,8 +78,6 @@ Probot.run((app: Application) => {
               e.targetBranchName
             ]);
             logger.warn(getMessage('LogMissingTargetBranch'));
-            break;
-          case 'NoPortLabelsException':
             break;
           default:
             logger.error(e.stack);

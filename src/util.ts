@@ -2,6 +2,27 @@ import { Application, Context } from 'probot';
 import { LoggerWithTarget } from 'probot/lib/wrap-logger';
 import { execSync } from 'child_process';
 
+type ConfigFile = {
+  triggers: {
+    [triggerBranch: string]: string[];
+  };
+};
+
+export class Config {
+  public static readonly FILE_NAME = 'autointegrator.yml';
+  private static instance: ConfigFile;
+
+  public static async get(context: Context): Promise<ConfigFile> {
+    if (!this.instance) {
+      this.instance = Object.assign(
+        { triggers: {} },
+        await context.config(this.FILE_NAME)
+      );
+    }
+    return this.instance;
+  }
+}
+
 export class Logger {
   private rootLogTarget: LoggerWithTarget;
   private installationId: string;
