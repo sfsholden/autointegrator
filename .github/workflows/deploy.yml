@@ -20,9 +20,13 @@ jobs:
         args: container:login
     - name: Push
       uses: actions/heroku@1.0.0
+      env:
+        HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
       with:
         args: container:push -a autointegrator web
     - name: Release
       uses: actions/heroku@1.0.0
+      env:
+        HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
       with:
         args: container:release -a autointegrator web
