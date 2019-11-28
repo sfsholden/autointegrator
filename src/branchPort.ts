@@ -41,6 +41,17 @@ export default class BranchPort {
       process.chdir(repoPath);
       run(`git remote add upstream ${url}`);
       run(`git fetch upstream ${targets[0]}`);
+      // Assuming we're just working with merge commits here
+      const { merge_commit_sha } = this.context.payload.pull_request;
+      const { author } = (
+        await this.context.github.repos.getCommit({
+          owner,
+          repo,
+          ref: (merge_commit_sha as unknown) as string
+        })
+      ).data.commit;
+      run(`git config user.name "${author.name}"`);
+      run(`git config user.email "${author.email}"`);
     } catch (e) {
       if (e.message.includes("Couldn't find remote ref")) {
         e.name = 'MissingTargetException';

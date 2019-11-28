@@ -21,7 +21,23 @@ describe('BranchPort', () => {
 
   describe('setupRepo', () => {
     const chdir = jest.spyOn(process, 'chdir').mockImplementation(() => true);
-    const port = new BranchPort(new ContextBuilder().withRepo().build());
+    const port = new BranchPort(
+      new ContextBuilder()
+        .withRepo()
+        .withPayload({ pull_request: { merge_commit_sha: 'testsha' } })
+        .withGithub({
+          repos: {
+            getCommit: () => ({
+              data: {
+                commit: {
+                  author: { name: 'My Name', email: 'myname@example.com' }
+                }
+              }
+            })
+          }
+        })
+        .build()
+    );
 
     afterAll(() => chdir.mockRestore());
 
@@ -35,19 +51,21 @@ describe('BranchPort', () => {
       expect(run).nthCalledWith(1, `git clone ${expectedUrl} ${repoPath}`);
       expect(run).nthCalledWith(2, `git remote add upstream ${expectedUrl}`);
       expect(run).nthCalledWith(3, `git fetch upstream develop`);
+      expect(run).nthCalledWith(4, `git config user.name "My Name"`);
+      expect(run).nthCalledWith(
+        5,
+        `git config user.email "myname@example.com"`
+      );
       expect(chdir).toHaveBeenCalledWith(repoPath);
     });
 
     test('should handle missing target branch error', async () => {
-      run // why do i have to do this just to make the third call do something
-        .mockImplementationOnce(() => '')
-        .mockImplementationOnce(() => '')
-        .mockImplementationOnce(cmd => {
-          if (cmd === 'git fetch upstream badBranch') {
-            throw new Error("fatal: Couldn't find remote ref");
-          }
-          return '';
-        });
+      run.mockImplementation(cmd => {
+        if (cmd === 'git fetch upstream badBranch') {
+          throw new Error("fatal: Couldn't find remote ref");
+        }
+        return '';
+      });
 
       try {
         await port.setupRepo(['badBranch'], 'testtoken');
