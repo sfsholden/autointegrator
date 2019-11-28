@@ -10,16 +10,17 @@ type ConfigFile = {
 
 export class Config {
   public static readonly FILE_NAME = 'autointegrator.yml';
-  private static instance: ConfigFile;
+  private context: Context;
 
-  public static async get(context: Context): Promise<ConfigFile> {
-    if (!this.instance) {
-      this.instance = Object.assign(
-        { triggers: {} },
-        await context.config(this.FILE_NAME)
-      );
-    }
-    return this.instance;
+  constructor(context: Context) {
+    this.context = context;
+  }
+
+  public async get(): Promise<ConfigFile> {
+    return Object.assign(
+      { triggers: {} },
+      await this.context.config(Config.FILE_NAME)
+    );
   }
 }
 
@@ -35,7 +36,7 @@ export class Logger {
   }
 
   public info(message: string) {
-    this.doLog(message, this.rootLogTarget);
+    this.doLog(message, this.rootLogTarget.info);
   }
 
   public warn(message: string) {
@@ -55,10 +56,14 @@ export class Logger {
   }
 
   private doLog(message: string, logTarget: LoggerWithTarget) {
-    logTarget(`[${this.installationId}] ${this.redact(message)}`);
+    let msg = message;
+    if (this.secrets.size > 0) {
+      msg = this.redact(msg);
+    }
+    logTarget(`[${this.installationId}] ${msg}`);
   }
 
-  private redact(message: string) {
+  private redact(message: string): string {
     const pattern = Array.from(this.secrets).reduce((acc, t, i) => {
       acc += t;
       acc += i < this.secrets.size - 1 ? '|' : ')';

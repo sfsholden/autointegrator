@@ -5,9 +5,11 @@ import { Logger, Config } from './util';
 
 Probot.run((app: Application) => {
   console.log('---------------\nAutointegrator\n---------------');
+  // @ts-ignore
+  new Logger(app, { payload: { installation: { id: 1234 } } }).info('asdf');
 
   app.on('pull_request.opened', async context => {
-    const config = await Config.get(context);
+    const config = await new Config(context).get();
     const { pull_request: openedPr } = context.payload;
     const targetBranches = config.triggers[openedPr.base.ref] || [];
 
@@ -26,7 +28,7 @@ Probot.run((app: Application) => {
   app.on('pull_request.closed', async context => {
     const port = new BranchPort(context);
     const logger = new Logger(app, context);
-    const config = await Config.get(context);
+    const config = await new Config(context).get();
     logger.addSecret(
       ...Object.values<string>(context.repo()),
       ...Object.keys(config.triggers)
