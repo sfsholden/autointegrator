@@ -9,11 +9,14 @@ const messages: { [key: string]: string } = {
   CommentMissingTargetBranch:
     '❗️The branch `%s` does not exist on the repo. Make the issue labels for the branches ' +
     'to port to are spelled correctly.',
+  CommentNoDiff:
+    '⚠️ The changes in the cherry-pick are already present in the `%s` branch. No port necessary.',
   CommentPortRequest:
     '✅ Thanks @%s, a port PR for the `%s` branch was created [here](%s).',
   CommentPortRequestFailed: '❗️Had some trouble making a port PR 😓.',
   LogCherryPickFailed: 'Cherry pick failed due to merge conflicts',
   LogMissingTargetBranch: 'Target branches were missing from the repository',
+  LogNoDiff: 'No differences with target branch and cherry-pick',
   PortRequestBody: 'Port changes made in #%s to the `%s` branch',
   PortRequestTitle: 'Port #%s to the %s branch'
 };

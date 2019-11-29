@@ -5,8 +5,6 @@ import { Logger, Config } from './util';
 
 Probot.run((app: Application) => {
   console.log('---------------\nAutointegrator\n---------------');
-  // @ts-ignore
-  new Logger(app, { payload: { installation: { id: 1234 } } }).info('asdf');
 
   app.on('pull_request.opened', async context => {
     const config = await new Config(context).get();
@@ -80,6 +78,10 @@ Probot.run((app: Application) => {
               e.targetBranchName
             ]);
             logger.warn(getMessage('LogMissingTargetBranch'));
+            break;
+          case 'NoDiffException':
+            body = getMessage('CommentNoDiff', [e.targetBranchName]);
+            logger.warn('LogNoDiff');
             break;
           default:
             logger.error(e.stack);

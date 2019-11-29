@@ -75,6 +75,9 @@ export default class BranchPort {
         e.portBranchName = head;
         // still push the port branch for manual merging
         run(`git push upstream ${head}`);
+      } else if (e.message.includes('The previous cherry-pick is now empty')) {
+        e.name = 'NoDiffException';
+        e.targetBranchName = targets[0];
       }
       throw e;
     }
