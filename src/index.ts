@@ -3,23 +3,28 @@ import { getMessage } from './messages';
 import BranchPort from './branchPort';
 import { Logger, Config } from './util';
 
-Probot.run((app: Application) => {
-  console.log('---------------\nAutointegrator\n---------------');
-
+export const app = (app: Application) => {
   app.on('pull_request.opened', async context => {
     const config = await new Config(context).get();
     const { pull_request: openedPr } = context.payload;
-    const targetBranches = config.triggers[openedPr.base.ref] || [];
+    const targetBranches = new Set(config.triggers[openedPr.base.ref]);
 
-    if (!context.isBot && targetBranches.length > 0) {
+    if (!context.isBot && targetBranches.size > 0) {
       const { number: issue_number } = context.payload;
       const { owner, repo } = context.repo();
-      context.github.issues.addLabels({
+
+      await context.github.issues.addLabels({
         owner,
         repo,
         issue_number,
-        labels: [`port:${targetBranches[0]}`]
+        labels: Array.from(targetBranches).map(b => `port:${b}`)
       });
+    }
+
+    // @ts-ignore
+    if (context.payload.testDone) {
+      // @ts-ignore
+      context.payload.testDone();
     }
   });
 
@@ -96,4 +101,6 @@ Probot.run((app: Application) => {
       }
     }
   });
-});
+};
+
+Probot.run(app);
