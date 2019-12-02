@@ -25,3 +25,5 @@ jobs:
         npm test
       env:
         CI: true
+        WEBHOOK_SECRET: testsecret
+        APP_ID: 000000
