@@ -1,7 +1,7 @@
-import * as util from '../src/util';
-import { ContextBuilder } from './testUtil';
+import * as util from '../../src/util';
+import { ContextBuilder } from '../testUtil';
 import * as child_process from 'child_process';
-import { run } from '../src/util';
+import { run } from '../../src/util';
 
 jest.mock('child_process');
 const mockedCp = child_process as jest.Mocked<typeof child_process>;

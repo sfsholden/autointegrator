@@ -1,4 +1,4 @@
-import { getMessage } from '../src/messages';
+import { getMessage } from '../../src/messages';
 
 describe('Messages', () => {
   test('should fetch message with a given key', () => {

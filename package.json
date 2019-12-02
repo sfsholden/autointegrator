@@ -18,8 +18,9 @@
     "start": "ts-node ./src/index.ts",
     "lint": "eslint **/*.ts",
     "test": "jest && npm run lint",
-    "test:watch": "jest --watch --notify --notifyMode=change --coverage",
-    "simulate": "probot receive -e pull_request -p test/fixtures/pulls.closed.json ./src/index.js"
+    "test:unit": "jest ./test/unit",
+    "test:integration": "jest ./test/integration",
+    "test:watch": "jest --watch --notify --notifyMode=change --coverage"
   },
   "dependencies": {
     "probot": "^9.5.3",

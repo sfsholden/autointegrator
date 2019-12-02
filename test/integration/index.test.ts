@@ -1,8 +1,8 @@
 import { Probot, createProbot } from 'probot';
 import nock from 'nock';
-import { app } from '../src';
-import { Config } from '../src/util';
-import * as openPayload from './fixtures/pull_request.opened.json';
+import { app } from '../../src';
+import { Config } from '../../src/util';
+import * as openPayload from '../fixtures/pull_request.opened.json';
 
 nock.disableNetConnect();
 
@@ -20,7 +20,7 @@ describe('App', () => {
     nock.enableNetConnect();
   });
 
-  describe('Autolabeling Opened Pull Requests', () => {
+  describe('Autolabel Opened Pull Requests', () => {
     const getConfig = jest.spyOn(Config.prototype, 'get');
 
     afterAll(() => getConfig.mockRestore());
@@ -86,4 +86,12 @@ describe('App', () => {
       });
     });
   });
+
+  // describe('Closing a Pull Request', () => {
+  //   test('should not trigger port if PR was not merged', () => {});
+
+  //   test('should not trigger port if PR had no port labels', () => {});
+
+  //   describe('Error Reporting', () => {});
+  // });
 });

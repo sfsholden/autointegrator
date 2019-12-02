@@ -1,9 +1,9 @@
 import { join } from 'path';
 import * as fs from 'fs';
-import * as util from '../src/util';
-import BranchPort, { TMP_LOCATION } from '../src/branchPort';
-import { getMessage } from '../src/messages';
-import { ContextBuilder } from './testUtil';
+import * as util from '../../src/util';
+import BranchPort, { TMP_LOCATION } from '../../src/branchPort';
+import { getMessage } from '../../src/messages';
+import { ContextBuilder } from '../testUtil';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
@@ -174,14 +174,14 @@ describe('BranchPort', () => {
     const repoPath = join(TMP_LOCATION, `testOwner-testRepo`);
     const port = new BranchPort(new ContextBuilder().withRepo().build());
 
-    test('Should delete repo if folder exists', () => {
+    test('should delete repo if folder exists', () => {
       mockedFs.existsSync.mockImplementation(path => path === repoPath);
       port.cleanUp();
       expect(fs.existsSync).toBeTruthy();
       expect(run).toHaveBeenCalledWith(`rm -rf ${repoPath}`);
     });
 
-    test('Should do nothing if folder does not exist', () => {
+    test('should do nothing if folder does not exist', () => {
       mockedFs.existsSync.mockReturnValue(false);
       port.cleanUp();
       expect(run).toHaveBeenCalledTimes(0);

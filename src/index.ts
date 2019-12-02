@@ -92,9 +92,7 @@ export const app = (app: Application) => {
             logger.error(e.stack);
             body = getMessage('CommentPortRequestFailed');
         }
-        if (body) {
-          port.commentOnPr({ number, body });
-        }
+        port.commentOnPr({ number, body });
       } finally {
         logger.info('Cleaning up');
         port.cleanUp();
