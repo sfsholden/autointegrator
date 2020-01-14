@@ -32,52 +32,47 @@ export default class BranchPort {
     throw new Error('Error fetching access token');
   }
 
-  public async setupRepo(targets: string[], accessToken: string) {
+  public async cloneRepo(accessToken: string) {
     const { owner, repo } = this.context.repo();
     const url = getMessage('CloneUrl', [accessToken, owner, repo]);
     const repoPath = join(TMP_LOCATION, `${owner}-${repo}`);
-    try {
-      run(`git clone ${url} ${repoPath}`);
-      process.chdir(repoPath);
-      run(`git remote add upstream ${url}`);
-      run(`git fetch upstream ${targets[0]}`);
-      // Assuming we're just working with merge commits here
-      const { merge_commit_sha } = this.context.payload.pull_request;
-      const { author } = (
-        await this.context.github.repos.getCommit({
-          owner,
-          repo,
-          ref: (merge_commit_sha as unknown) as string
-        })
-      ).data.commit;
-      run(`git config user.name "${author.name}"`);
-      run(`git config user.email "${author.email}"`);
-    } catch (e) {
-      if (e.message.includes("Couldn't find remote ref")) {
-        e.name = 'MissingTargetException';
-        e.targetBranchName = targets[0];
-      }
-      throw e;
-    }
+    run(`git clone ${url} ${repoPath}`);
+    process.chdir(repoPath);
+    run(`git remote add upstream ${url}`);
+    // Assuming we're just working with merge commits here
+    const { merge_commit_sha } = this.context.payload.pull_request;
+    const { author } = (
+      await this.context.github.repos.getCommit({
+        owner,
+        repo,
+        ref: (merge_commit_sha as unknown) as string
+      })
+    ).data.commit;
+    run(`git config user.name "${author.name}"`);
+    run(`git config user.email "${author.email}"`);
   }
 
-  public createPortBranch(targets: string[]): string {
+  public createPortBranch(target: string): string {
     const { number, merge_commit_sha } = this.context.payload.pull_request;
-    const head = `${targets[0]}-port-${number}`;
+    const head = `${target}-port-${number}`;
     try {
-      run(`git checkout upstream/${targets[0]}`);
+      run(`git fetch upstream ${target}`);
+      run(`git checkout upstream/${target}`);
       run(`git checkout -b ${head}`);
       run(`git cherry-pick ${merge_commit_sha}`);
       run(`git push upstream ${head}`);
     } catch (e) {
-      if (e.message.includes('after resolving the conflicts')) {
+      if (e.message.includes("Couldn't find remote ref")) {
+        e.name = 'MissingTargetException';
+        e.targetBranchName = target;
+      } else if (e.message.includes('after resolving the conflicts')) {
         e.name = 'ConflictException';
         e.portBranchName = head;
         // still push the port branch for manual merging
         run(`git push upstream ${head}`);
       } else if (e.message.includes('The previous cherry-pick is now empty')) {
         e.name = 'NoDiffException';
-        e.targetBranchName = targets[0];
+        e.targetBranchName = target;
       }
       throw e;
     }
@@ -85,7 +80,7 @@ export default class BranchPort {
   }
 
   public async createPortRequest(
-    targets: string[],
+    target: string,
     head: string
   ): Promise<string> {
     const { owner, repo } = this.context.repo();
@@ -93,10 +88,10 @@ export default class BranchPort {
     const pr = await this.context.github.pulls.create({
       owner,
       repo,
-      title: getMessage('PortRequestTitle', [number, targets[0]]),
+      title: getMessage('PortRequestTitle', [number, target]),
       head,
-      base: targets[0],
-      body: getMessage('PortRequestBody', [number, targets[0]])
+      base: target,
+      body: getMessage('PortRequestBody', [number, target])
     });
     return pr.data.html_url;
   }

@@ -4,8 +4,6 @@ import BranchPort from './branchPort';
 import { Logger, Config } from './util';
 
 Probot.run((app: Application) => {
-  console.log('---------------\nAutointegrator\n---------------');
-
   app.on('pull_request.opened', async context => {
     const config = await new Config(context).get();
     const { pull_request: openedPr } = context.payload;
@@ -44,52 +42,61 @@ Probot.run((app: Application) => {
         logger.info('Setting up the repository');
         const accessToken = await port.fetchToken(app);
         logger.addSecret(accessToken);
-        await port.setupRepo(targetBranches, accessToken);
+        await port.cloneRepo(accessToken);
 
-        logger.info('Creating the port branch from the base');
-        const portBranchName = await port.createPortBranch(targetBranches);
+        for (const branch of targetBranches) {
+          try {
+            const portBranchName = await port.createPortBranch(branch);
+            logger.info('Creating the port branch from the base');
 
-        logger.info('Sending the port pull request');
-        const portPrLink = await port.createPortRequest(
-          targetBranches,
-          portBranchName
-        );
+            logger.info('Sending the port pull request');
+            const portPrLink = await port.createPortRequest(
+              branch,
+              portBranchName
+            );
+            port.commentOnPr({
+              number,
+              body: getMessage('CommentPortRequest', [
+                sender,
+                branch,
+                portPrLink
+              ])
+            });
+          } catch (e) {
+            let body;
+            switch (e.name) {
+              case 'ConflictException':
+                body = getMessage('CommentCherryPickFailed', [
+                  sender,
+                  e.portBranchName,
+                  closedPr.merge_commit_sha
+                ]);
+                logger.warn(getMessage('LogCherryPickFailed'));
+                break;
+              case 'MissingTargetException':
+                body = getMessage('CommentMissingTargetBranch', [
+                  e.targetBranchName
+                ]);
+                logger.warn(getMessage('LogMissingTargetBranch'));
+                break;
+              case 'NoDiffException':
+                body = getMessage('CommentNoDiff', [e.targetBranchName]);
+                logger.warn('LogNoDiff');
+                break;
+              default:
+                throw e;
+            }
+            if (body) {
+              port.commentOnPr({ number, body });
+            }
+          }
+        }
+      } catch (e) {
+        logger.error(e.stack);
         port.commentOnPr({
           number,
-          body: getMessage('CommentPortRequest', [
-            sender,
-            targetBranches[0],
-            portPrLink
-          ])
+          body: getMessage('CommentPortRequestFailed')
         });
-      } catch (e) {
-        let body;
-        switch (e.name) {
-          case 'ConflictException':
-            body = getMessage('CommentCherryPickFailed', [
-              sender,
-              e.portBranchName,
-              closedPr.merge_commit_sha
-            ]);
-            logger.warn(getMessage('LogCherryPickFailed'));
-            break;
-          case 'MissingTargetException':
-            body = getMessage('CommentMissingTargetBranch', [
-              e.targetBranchName
-            ]);
-            logger.warn(getMessage('LogMissingTargetBranch'));
-            break;
-          case 'NoDiffException':
-            body = getMessage('CommentNoDiff', [e.targetBranchName]);
-            logger.warn('LogNoDiff');
-            break;
-          default:
-            logger.error(e.stack);
-            body = getMessage('CommentPortRequestFailed');
-        }
-        if (body) {
-          port.commentOnPr({ number, body });
-        }
       } finally {
         logger.info('Cleaning up');
         port.cleanUp();

@@ -19,7 +19,7 @@ describe('BranchPort', () => {
   afterAll(() => jest.restoreAllMocks());
   afterEach(() => jest.clearAllMocks());
 
-  describe('setupRepo', () => {
+  describe('cloneRepo', () => {
     const chdir = jest.spyOn(process, 'chdir').mockImplementation(() => true);
     const port = new BranchPort(
       new ContextBuilder()
@@ -46,17 +46,38 @@ describe('BranchPort', () => {
       const expectedUrl =
         'https://sfdx-backport:testtoken@github.com/testOwner/testRepo';
 
-      await port.setupRepo(['develop'], 'testtoken');
+      await port.cloneRepo('testtoken');
 
       expect(run).nthCalledWith(1, `git clone ${expectedUrl} ${repoPath}`);
       expect(run).nthCalledWith(2, `git remote add upstream ${expectedUrl}`);
-      expect(run).nthCalledWith(3, `git fetch upstream develop`);
-      expect(run).nthCalledWith(4, `git config user.name "My Name"`);
+      expect(run).nthCalledWith(3, `git config user.name "My Name"`);
       expect(run).nthCalledWith(
-        5,
+        4,
         `git config user.email "myname@example.com"`
       );
       expect(chdir).toHaveBeenCalledWith(repoPath);
+    });
+  });
+
+  describe('createPortBranch', () => {
+    const builder = new ContextBuilder().withPayload({
+      pull_request: { number: 123, merge_commit_sha: 'testsha' }
+    });
+    const port = new BranchPort(builder.build());
+    const target = 'develop';
+    const expectedBranch = `${target}-port-123`;
+
+    test('should return expected name for port branch', () => {
+      expect(port.createPortBranch(target)).toEqual(expectedBranch);
+    });
+
+    test('should run correct commands in order', () => {
+      port.createPortBranch(target);
+      expect(run).nthCalledWith(1, `git fetch upstream ${target}`);
+      expect(run).nthCalledWith(2, `git checkout upstream/${target}`);
+      expect(run).nthCalledWith(3, `git checkout -b ${expectedBranch}`);
+      expect(run).nthCalledWith(4, `git cherry-pick testsha`);
+      expect(run).nthCalledWith(5, `git push upstream ${expectedBranch}`);
     });
 
     test('should handle missing target branch error', async () => {
@@ -68,32 +89,11 @@ describe('BranchPort', () => {
       });
 
       try {
-        await port.setupRepo(['badBranch'], 'testtoken');
+        await port.createPortBranch('badBranch');
         fail('should have thrown an error');
       } catch (e) {
         expect(e.name).toEqual('MissingTargetException');
       }
-    });
-  });
-
-  describe('createPortBranch', () => {
-    const builder = new ContextBuilder().withPayload({
-      pull_request: { number: 123, merge_commit_sha: 'testsha' }
-    });
-    const port = new BranchPort(builder.build());
-    const targets = ['develop'];
-    const expectedBranch = `${targets[0]}-port-123`;
-
-    test('should return expected name for port branch', () => {
-      expect(port.createPortBranch(targets)).toEqual(expectedBranch);
-    });
-
-    test('should run correct commands in order', () => {
-      port.createPortBranch(targets);
-      expect(run).nthCalledWith(1, `git checkout upstream/${targets[0]}`);
-      expect(run).nthCalledWith(2, `git checkout -b ${expectedBranch}`);
-      expect(run).nthCalledWith(3, `git cherry-pick testsha`);
-      expect(run).nthCalledWith(4, `git push upstream ${expectedBranch}`);
     });
 
     test('should handle cherry-pick conflict error', () => {
@@ -105,13 +105,13 @@ describe('BranchPort', () => {
       });
 
       try {
-        port.createPortBranch(targets);
+        port.createPortBranch(target);
         fail('Should have thrown an error');
       } catch (e) {
         expect(e.name).toEqual('ConflictException');
         expect(e.portBranchName).toEqual(expectedBranch);
         // still push the branch that was already created
-        expect(run).nthCalledWith(4, `git push upstream ${expectedBranch}`);
+        expect(run).nthCalledWith(5, `git push upstream ${expectedBranch}`);
       }
     });
   });
@@ -129,22 +129,22 @@ describe('BranchPort', () => {
       })
       .build();
     const port = new BranchPort(context);
-    const targets = ['develop'];
+    const target = 'develop';
 
     test('should create pull request with correct parameters', async () => {
-      await port.createPortRequest(targets, 'testBranch');
+      await port.createPortRequest(target, 'testBranch');
       expect(context.github.pulls.create).toHaveBeenCalledWith({
         owner: 'testOwner',
         repo: 'testRepo',
-        title: getMessage('PortRequestTitle', ['123', targets[0]]),
-        body: getMessage('PortRequestBody', ['123', targets[0]]),
-        base: targets[0],
+        title: getMessage('PortRequestTitle', ['123', target]),
+        body: getMessage('PortRequestBody', ['123', target]),
+        base: target,
         head: 'testBranch'
       });
     });
 
     test('should return URL for new pull request', async () => {
-      expect(await port.createPortRequest(targets, 'testBranch')).toEqual(
+      expect(await port.createPortRequest(target, 'testBranch')).toEqual(
         'https://example.com'
       );
     });
