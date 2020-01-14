@@ -39,7 +39,7 @@ export default class BranchPort {
     run(`git clone ${url} ${repoPath}`);
     process.chdir(repoPath);
     run(`git remote add upstream ${url}`);
-    // Assuming we're just working with merge commits here
+    // Assuming we're just working with merge commits
     const { merge_commit_sha } = this.context.payload.pull_request;
     const { author } = (
       await this.context.github.repos.getCommit({
