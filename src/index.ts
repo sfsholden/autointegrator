@@ -16,7 +16,7 @@ Probot.run((app: Application) => {
         owner,
         repo,
         issue_number,
-        labels: [`port:${targetBranches[0]}`]
+        labels: targetBranches.map(branch => `port:${branch}`)
       });
     }
   });
